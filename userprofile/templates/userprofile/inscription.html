@@ -1,0 +1,150 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <title>SIGN-IN</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <form method="POST" action="{% url 'inscription_register_api' %}">
+            {% csrf_token %}
+            <div id='all'>
+                <h1>INSCRIPTION</h1>
+
+                <div id='n'>
+                    <label for ='nom'>Nom</label>
+                    <input placeholder="Votre nom" name='nom' required>
+                </div>
+                
+                <div id="p">
+                    <label for ='password'>Mot de passe</label>
+                    <input type='password' placeholder="Votre mot de passe" name='password' required>
+                </div>
+                
+                <div id="cp">
+                    <label for ='confirm'>Confirmer</label>
+                    <input type='password' placeholder="Confirmer mot de passe" name='confirm' required>
+                </div>
+                
+                <span class="mod">
+                    <a href="http://localhost:8000/change/">
+                        Modifier votre mot de passe ici
+                    </a>
+                </span>
+
+                <div id="m">
+                    <label for ='mail'>E-mail</label>
+                    <input type='email' placeholder="Confirmer mot de passe" name='mail'>
+                </div>
+                
+                <input type="submit" value="Sign-in" id="l">
+                
+                <a href="http://localhost:8000/admin/logout/">
+                    <span id="lg">
+                        Logout
+                    </span>
+                </a>
+
+                <a href="http://localhost:8000/forget_password/" id="for">
+                    Forget password
+                </a>
+            </div>
+        </form>
+    </body>
+</html>
+
+
+<style>
+    #for{
+        background-color:#ff9900;
+        margin-top:0px;
+        display:inline-block;
+        font-size:23px;"
+        border: 1px solid white;
+        border-radius: 10px;
+        font-size: 24px;
+        padding: 15px;
+        margin-left:-12cm;
+    }
+
+    .mod{
+        display:block;
+        font-size:13px;
+        margin-left: 6.2cm;
+        color:#9f9;
+    }
+
+    a{
+        text-decoration:none;
+        font-weight:600;
+    }
+
+    /*Le grand DIV*/
+    #all{
+        margin-top: 30px;
+    }
+
+    label,input{
+        font-size: 26px;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+    }
+
+    /*Aligner label et input*/
+    label+input{
+        display:block;
+    }
+
+    /*Margin de nom et mot de passe*/
+    #n, #p, #cp, #m{
+        margin-left: 6cm;
+        margin-top: .4cm;
+    }
+
+    /*Log-Out*/
+    #lg{
+        background-color:#f40;
+        color: white;
+        border: 1px solid white;
+        border-radius: 10px;
+        font-size: 24px;
+        padding: 15px;
+        margin-left: 10.1cm;
+    }
+
+    /*Login et Log-Out*/
+    #l,#lg,#for{
+        margin-top: 6.6mm;
+    }
+
+    /*Submit*/
+    input[type="submit"]{
+        margin-left: 6.2cm;
+        margin-top: .7cm;
+        background-color: #09f;
+        color: white;
+        border: 1px solid white;
+        border-radius: 10px;
+        font-size: 24px;
+        padding: 15px;
+    }
+
+    input[placeholder]{
+        font-size:20px;
+    }
+
+    input{
+        border: 3px solid black;
+        border-radius: 10px;
+        padding-right: 120px;
+        padding-top: 20px;
+        padding-bottom:20px;
+    }
+
+    h1{
+        font-size: 35px;
+        margin-left: 6cm;
+        margin-bottom: 25px;
+        text-decoration: underline;
+    }
+</style>
