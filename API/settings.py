@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "commandeclient",
     "commandefournisseur",
     "compte",
+    "currency",
     "hotel",
     "inventairecuisine",
     "inventairemagasin",

@@ -106,6 +106,11 @@ from transaction.views import (
 )
 
 
+from currency.views import (
+    get_exchange_rate,
+    create_exchange_rate
+)
+
 
 
 urlpatterns = [
@@ -184,9 +189,10 @@ urlpatterns = [
 
     path("gett/", get_transactions),
     path("createt/", create_transaction),
+
+    path("getCurrency/", get_exchange_rate),
+    path("createCurrency/", create_exchange_rate),
 ]
-
-
 
 
 
