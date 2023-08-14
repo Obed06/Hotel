@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from django.contrib.gis.geoip2 import GeoIP2
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -102,14 +104,11 @@ WSGI_APPLICATION = "API.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-GEOIP2_PATH = "/home/user/virtualenvs/IA_PROJECTS/MY_PROJECTS/VIRT/lib/python3.10/site-packages/django/contrib/gis/geoip2"
-
-os.environ['LD_LIBRARY_PATH'] = "/home/user/virtualenvs/IA_PROJECTS/MY_PROJECTS/VIRT/lib/python3.10/site-packages/django/contrib/gis/db/backends/spatialite"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.spatialite",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

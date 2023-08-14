@@ -7,8 +7,5 @@ from .models import Hotel
 class HotelSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Hotel
-		fields = [
-			"nom",
-			"tel"
-		]
+		fields = "__all__"
 
