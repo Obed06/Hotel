@@ -19,6 +19,9 @@ from userprofile.views import (
     disable_user,
     get_user_profiles,
     create_user_profile,
+    generate_and_send_password,
+    change_password_with_temporary,
+    do_mail_password
 )
 
 from chambre.views import (
@@ -134,9 +137,13 @@ urlpatterns = [
     path('disable-user/', disable_user, name="disable-user"),
 
 
+    path('api/generate_password/', generate_and_send_password, name="password_generated"),
+    path('api/change_password/', change_password_with_temporary, name="password_changed"),
+    path('resset_password/', do_mail_password, name="password_mail_changed"),
 
     path("getu/", get_user_profiles),
     path("createu/", create_user_profile),
+
 
     path("getChambre/", get_chambres),
     path("createChambre/", create_chambre),

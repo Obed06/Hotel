@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from datetime import datetime, timedelta
 
 
 
@@ -12,10 +13,11 @@ class UserProfile(models.Model):
     phone_number = models.CharField(max_length=20, default=None, null=True)
     address = models.TextField(default=None, null=True, blank=True)
     email = models.EmailField(max_length=254, unique=True, default=None, blank=True)
-    speciality = models.CharField(max_length=100, default=None, null=True, blank=True)
     years_of_experience = models.IntegerField(default=0, null=True)
     grade = models.CharField(max_length=50, default=None, null=True, blank=True)
     job_title = models.CharField(max_length=100, default="Cuisinier")
+    temp_password = models.CharField(max_length=128, null=True, blank=True)
+    temp_password_expiration = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return str(self.user)

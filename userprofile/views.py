@@ -1,12 +1,22 @@
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rest_framework import status
 from django.shortcuts import render
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, renderer_classes
+from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from datetime import datetime, timedelta
 from .models import UserProfile
 from .serializers import UserProfileSerializer
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from django.http import JsonResponse
+
 
 
 
@@ -68,7 +78,7 @@ class RegisterView(APIView):
         for user in users:
             if user.is_staff != True:
                 user.is_staff = True
-            user.save()
+                user.save()
         return Response({'Message': 'Utilisateur créé avec succès.'}, status=status.HTTP_201_CREATED)
 
 
@@ -87,6 +97,8 @@ def get_email(request):
     return Response(Email, status=200)
 
 
+
+
 # TRANSFORMER ETAT DE CHAQUE UTILISATEUR (STATUT-EQUIPE & STATUT-SUPERUSER)
 @api_view(['GET'])
 def set_staff_and_superuser(request):
@@ -99,31 +111,22 @@ def set_staff_and_superuser(request):
     return Response("Modification effectuée avec succès !", status=200)
 
 
+
+
 # DESACTIVER USERS SAUF LE PREMIER UTILISATEUR
 @api_view(['GET','POST'])
 def disable_user(request):
-    users = User.objects.all()
-    user_state = []
-    for user in users:
-        user_state.append({
-            "id": user.id,
-            "nom": user.username,
-            "actif": user.is_active,
-            "equipe": user.is_staff,
-            "super": user.is_superuser
-        })
-        
-        taille = len(user_state)
-        T = taille - 1
-        
-        if T >= 0:
-            if user_state[T]["nom"] == "root":
-                pass
-            else:
-                user_state[T]["actif"] = False
-                T-=1
-    return Response(user_state, status=200)
+    username = request.data.get('username')
+    User = get_user_model()
 
+    try:
+        user = User.objects.get(username=username)
+    except UserProfile.DoesNotExist:
+        return Response({'message': "Le profil de l'utilisateur est introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+    user.is_active = False
+    user.save()
+    return Response({'message': "L'utilisateur désactivé avec succès."}, status=status.HTTP_200_OK)
 
 
 
@@ -133,7 +136,6 @@ def inscription_page(request):
 
 
 
-# GET ET POST DE CHAQUE MODELE
 # USERPROFILE
 @api_view(['GET'])
 def get_user_profiles(request):
@@ -151,3 +153,66 @@ def create_user_profile(request):
         return Response(serialized_data.data, status=status.HTTP_201_CREATED)
     else:
         return Response(serialized_data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+def generate_and_send_password(request):
+    email = request.data.get('email')
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'detail': 'User not found'}, status=404)
+    
+    temp_password = get_random_string(length=12)  # Générez un mot de passe aléatoire
+    
+    # Envoi du mot de passe temporaire par e-mail
+    try:
+        subject = 'Votre nouveau mot de passe'
+        message = f'Votre nouveau mot de passe temporaire est : {temp_password}'
+        from_email = 'leonardovodouhe06@gmail.com'
+        recipient_list = [email]
+
+        send_mail(subject, message, from_email, recipient_list)
+    except Exception as e:
+        return Response({'detail': f'Failed to send email: {str(e)}'}, status=500)
+    
+    return Response({'detail': 'Password generated and sent'}, status=200)
+
+
+
+
+@api_view(['POST'])
+def change_password_with_temporary(request):
+    email = request.data.get('email')
+    temp_password = request.data.get('temp_password')
+    new_password = request.data.get('new_password')
+    
+    try:
+        profile = UserProfile.objects.get(email=email, temp_password=temp_password, temp_password_expiration__gt=datetime.now())
+    except UserProfile.DoesNotExist:
+        return Response({'detail': 'Invalid credentials or password expired'}, status=400)
+    
+    # Mettez à jour le mot de passe de l'utilisateur associé au profil
+    user = profile.user
+    user.set_password(new_password)
+    user.save()
+
+    # Effacez les champs de mot de passe temporaire
+    profile.temp_password = None
+    profile.temp_password_expiration = None
+    profile.save()
+    
+    return Response({'detail': 'Password changed successfully'})
+
+
+
+
+# Changer mot de passe par mail
+def do_mail_password(request):
+    return render(request, "userprofile/mail_password.html")
