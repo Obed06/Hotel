@@ -1,21 +1,40 @@
-from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout, authenticate, login
 from rest_framework import status
-from django.shortcuts import render
-from rest_framework.decorators import api_view, renderer_classes
-from rest_framework.renderers import JSONRenderer
+
+from .models import UserProfile
+from .serializers import UserProfileSerializer
+from django.shortcuts import render, redirect
+from rest_framework.decorators import api_view
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.core.mail import send_mail
-from django.utils.crypto import get_random_string
-from datetime import datetime, timedelta
-from .models import UserProfile
-from .serializers import UserProfileSerializer
+from datetime import timedelta
+
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from django.http import JsonResponse
+
+from django.core.mail import EmailMessage
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils import timezone
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+import secrets
+import string
+
+from django.contrib.auth.hashers import make_password, check_password, PBKDF2PasswordHasher
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+
+from django.db import IntegrityError
+import hashlib
+import os
 
 
 
@@ -35,6 +54,9 @@ def login_view(request):
             return Response({'message': "Connexion réussie."}, status=status.HTTP_200_OK)
         else:
             return Response({'message': "Identifiant ou mot de passe incorrect."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+
 
 
 # LISTE UTILISATEUR
@@ -69,16 +91,23 @@ class RegisterView(APIView):
         if password != confirm:
             valide['confirm'] = "Les mots de passe ne correspondent pas."
 
-        if valide:
+        elif get_user_model().objects.filter(username=username).exists():
+            valide['username'] = "Ce nom d'utilisateur est déjà pris."
+
+        elif valide:
             return Response({'valide': valide}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.create_user(username=username, password=password, email=email)
-        users = User.objects.all()
+        # Créer un nouvel utilisateur en spécifiant l'adresse e-mail
+        user = get_user_model().objects.create_user(username=username, password=password, email=email)
+
+        # Créer ou mettre à jour le profil utilisateur
+        user_profile, created = UserProfile.objects.get_or_create(user=user)
         
-        for user in users:
-            if user.is_staff != True:
-                user.is_staff = True
-                user.save()
+        if not user.is_staff or not user.is_superuser:
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+        
         return Response({'Message': 'Utilisateur créé avec succès.'}, status=status.HTTP_201_CREATED)
 
 
@@ -158,61 +187,110 @@ def create_user_profile(request):
 
 
 
+def custom_logout(request):
+    logout(request)
+    # Rediriger vers la page de connexion de Django après la déconnexion
+    return redirect('admin:login')
+
+
+
 
 @api_view(['POST'])
-@renderer_classes([JSONRenderer])
-def generate_and_send_password(request):
-    email = request.data.get('email')
+def generate_password_and_send_email(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
 
-    try:
-        user = User.objects.get(email=email)
-    except User.DoesNotExist:
-        return Response({'detail': 'User not found'}, status=404)
-    
-    temp_password = get_random_string(length=12)  # Générez un mot de passe aléatoire
-    
-    # Envoi du mot de passe temporaire par e-mail
-    try:
-        subject = 'Votre nouveau mot de passe'
-        message = f'Votre nouveau mot de passe temporaire est : {temp_password}'
-        from_email = 'leonardovodouhe06@gmail.com'
+        # Vérifier si l'e-mail existe dans la base de données
+        try:
+            user = get_user_model().objects.get(email=email)
+        except get_user_model().DoesNotExist:
+            return Response({"message": "L'e-mail n'existe pas dans la base de données."}, status=400)
+
+        # Générer un mot de passe aléatoire de 20 caractères
+        password_length = 20 
+        characters = string.ascii_letters + string.digits + string.punctuation
+        generated_password = ''.join(secrets.choice(characters) for _ in range(password_length))
+
+        # Générer un sel aléatoire (utiliser la fonction de Django)
+        salt = None
+
+        # Hacher le mot de passe généré avec l'algorithme SHA-2
+        hashed_generated_password = make_password(generated_password, salt=salt)
+
+        # Enregistrer le mot de passe haché comme ancien mot de passe pour l'utilisateur
+        user.set_password(hashed_generated_password)
+        user.save()
+
+
+        # Obtenir l'heure actuelle
+        current_time = timezone.now()
+
+        # Calculer l'heure d'expiration (360 secondes plus tard)
+        expiration_time = current_time + timezone.timedelta(seconds=420)
+
+        # Construire le message de l'e-mail avec le mot de passe généré (non haché)
+        subject = "Demande de réinitialisation de mot de passe"
+        
+        message = f"Bonjour,\
+\n\nVous avez demandé la réinitialisation de votre mot de passe. Votre nouveau mot de passe temporaire est le suivant :\
+\n\n{generated_password}\n\nLa page de réinitialisation s'est déjà affiché dans votre navigateur. Veuillez à renseigner tous les champs requis."
+
+        from_email = "noreply@example.com"
         recipient_list = [email]
 
+        # Envoyer l'e-mail
         send_mail(subject, message, from_email, recipient_list)
-    except Exception as e:
-        return Response({'detail': f'Failed to send email: {str(e)}'}, status=500)
-    
-    return Response({'detail': 'Password generated and sent'}, status=200)
+
+        response_data = {
+            "message": "Un e-mail a été envoyé avec les instructions de réinitialisation.",
+            "password": generated_password,
+            "expiration_time": expiration_time,
+        }
+
+        return redirect('reset_password/', status=200)
+
 
 
 
 
 @api_view(['POST'])
-def change_password_with_temporary(request):
-    email = request.data.get('email')
-    temp_password = request.data.get('temp_password')
-    new_password = request.data.get('new_password')
-    
-    try:
-        profile = UserProfile.objects.get(email=email, temp_password=temp_password, temp_password_expiration__gt=datetime.now())
-    except UserProfile.DoesNotExist:
-        return Response({'detail': 'Invalid credentials or password expired'}, status=400)
-    
-    # Mettez à jour le mot de passe de l'utilisateur associé au profil
-    user = profile.user
-    user.set_password(new_password)
-    user.save()
+def temporary_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        old_password = request.POST.get('old_password')
+        new_password = request.POST.get('new_password')
+        confirm_new_password = request.POST.get('confirm_new_password')
 
-    # Effacez les champs de mot de passe temporaire
-    profile.temp_password = None
-    profile.temp_password_expiration = None
-    profile.save()
-    
-    return Response({'detail': 'Password changed successfully'})
+        try:
+            user = get_user_model().objects.get(email=email)
+        except get_user_model().DoesNotExist:
+            return Response({"message": "L'utilisateur avec cet e-mail n'existe pas."}, status=400)
 
 
+        # Vérifier si le nouveau mot de passe et le mot de passe de confirmation correspondent
+        if new_password != confirm_new_password:
+            return Response({"message": "Les nouveaux mots de passe ne correspondent pas."}, status=400)
+
+        # Vérifier si le nouveau mot de passe est différent de l'ancien mot de passe
+        if new_password == old_password:
+            return Response({"message": "Le nouveau mot de passe doit être différent de l'ancien mot de passe."}, status=400)
+
+        # Mettre à jour le mot de passe de l'utilisateur avec le nouveau mot de passe saisi
+        user.set_password(new_password)
+        user.save()
+            
+    return Response({"message": "Le mot de passe a été mis à jour avec succès."}, status=200)
+      
 
 
-# Changer mot de passe par mail
-def do_mail_password(request):
-    return render(request, "userprofile/mail_password.html")
+
+
+
+def submit_email(request):
+    return render(request, 'userprofile/submit_email.html', status=200)
+
+
+def reset_password(request):
+    return render(request, 'userprofile/reset_password.html', status=200)
+
+

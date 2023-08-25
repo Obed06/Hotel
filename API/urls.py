@@ -17,11 +17,13 @@ from userprofile.views import (
     get_email,
     set_staff_and_superuser,
     disable_user,
+    custom_logout,
     get_user_profiles,
     create_user_profile,
-    generate_and_send_password,
-    change_password_with_temporary,
-    do_mail_password
+    generate_password_and_send_email,
+    temporary_password,
+    submit_email,
+    reset_password
 )
 
 from chambre.views import (
@@ -135,11 +137,14 @@ urlpatterns = [
     path('getEmail/', get_email, name="mail"),
     path('set-staff-superuser/', set_staff_and_superuser, name="set_status"),
     path('disable-user/', disable_user, name="disable-user"),
+    path('logout/', custom_logout, name='custom_logout'),
 
 
-    path('api/generate_password/', generate_and_send_password, name="password_generated"),
-    path('api/change_password/', change_password_with_temporary, name="password_changed"),
-    path('resset_password/', do_mail_password, name="password_mail_changed"),
+    path('generate_password/', generate_password_and_send_email, name='generate_password_and_send_email'),
+    path('temporary_password/', temporary_password, name='temporary_password'),
+    path('submit_email/', submit_email, name='submit_email'),
+    path('generate_password/reset_password/', reset_password, name='reset_password'),
+
 
     path("getu/", get_user_profiles),
     path("createu/", create_user_profile),

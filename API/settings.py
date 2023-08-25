@@ -13,7 +13,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from django.contrib.gis.geoip2 import GeoIP2
-
+import json
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +32,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-# AUTH_USER_MODEL = 'api.UserProfile'
 
 
 # Application definition
@@ -50,7 +51,7 @@ INSTALLED_APPS = [
 
     # "allauth",
     # "allauth.account",
-    
+
     "chambre",
     "checkout",
     "commandeclient",
@@ -113,8 +114,6 @@ DATABASES = {
 }
 
 
-
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -174,19 +173,21 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_FROM = "leonardovodouhe06@gmail.com"
+EMAIL_HOST_USER = "leonardovodouhe06@gmail.com"
 
 
-# Configuration SMTP
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+
+# EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+my_way = os.path.join(BASE_DIR, "API/.env.json")
+
+
+with open(my_way) as json_file:
+    config_data = json.load(json_file)
+
+EMAIL_HOST_PASSWORD = config_data["email_host_password"]
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-DEFAULT_FROM_EMAIL = "leonardovodouhe06@gmail.com"
-EMAIL_HOST_USER = 'leonardovodouhe06@gmail.com'
-EMAIL_HOST_PASSWORD = '@chekvolonte'
-
-
-
-
-
+PASSWORD_RESET_TIMEOUT = 14400

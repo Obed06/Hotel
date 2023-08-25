@@ -4,7 +4,7 @@
 
 git checkout main
 git add .
-git commit -m "Modification Appliquer | Reset password en cours"
+git commit -m "Reset password done"
 git remote -v
 git push -u origin main
 

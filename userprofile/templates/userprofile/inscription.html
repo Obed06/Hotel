@@ -28,7 +28,7 @@
                 </div>
                 
                 <span class="mod">
-                    <a href="http://localhost:8000/change/">
+                    <a href="{% url 'password_change' %}">
                         Modifier votre mot de passe ici
                     </a>
                 </span>
@@ -40,14 +40,10 @@
                 
                 <input type="submit" value="Sign-in" id="l">
                 
-                <a href="http://localhost:8000/admin/logout/">
+                <a href="{% url 'custom_logout' %}">
                     <span id="lg">
                         Logout
                     </span>
-                </a>
-
-                <a href="http://localhost:8000/forget_password/" id="for">
-                    Forget password
                 </a>
             </div>
         </form>

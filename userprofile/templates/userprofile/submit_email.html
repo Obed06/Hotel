@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Réinitialisation de mot de passe</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    </head>
+    <body>
+
+        <div class="container mt-5">
+            <h2>Réinitialisation de mot de passe</h2>
+            
+            <form method="POST" action="{% url 'generate_password_and_send_email' %}">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">Adresse e-mail :</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Générer un mot de passe temporaire</button>
+            </form>
+
+            <div class="container mt-auto">
+                <p>
+                    Veuillez, vérifier votre email. Si vous ne l'aviez pas reçcu, inscrivez-vous <a href="{% url 'inscription' %}">ici</a>.<br>
+                    Sinon vérifiez qu'il s'agit bien de votre <strong>E-mail</strong>.
+                </p>
+            </div>
+
+        </div>
+
+    </body>
+</html>
+
+
+
+<style>
+    
+    form{
+        margin-top: .5cm;
+    }
+
+    button{
+        margin-bottom: .5cm;
+    }
+
+    html, body, p, .container{
+        letter-spacing: 1px;
+        word-spacing: 2px;
+    }
+
+    p{
+        margin-left: -.4cm;
+    }
+
+</style>
+
