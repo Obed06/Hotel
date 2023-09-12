@@ -4,7 +4,7 @@
 
 git checkout main
 git add .
-git commit -m "|-- correct .gitignore --|"
+git commit -m "|| add 12 sept 2023 -- 18:22 ||"
 git remote -v
 git push origin main
 
