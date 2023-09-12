@@ -4,7 +4,7 @@
 
 git checkout main
 git add .
-git commit -m "Reset password done"
+git commit -m "|-- add file .gitignore --|"
 git remote -v
 git push origin main
 
